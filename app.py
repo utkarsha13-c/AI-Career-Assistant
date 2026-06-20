@@ -1,5 +1,26 @@
 from utils.gemini_api import get_gemini_response
 import streamlit as st
+from reportlab.platypus import SimpleDocTemplate, Paragraph
+from reportlab.lib.styles import getSampleStyleSheet
+from io import BytesIO
+
+def generate_pdf(messages):
+    buffer = BytesIO()
+
+    doc = SimpleDocTemplate(buffer)
+    styles = getSampleStyleSheet()
+
+    content = []
+
+    for msg in messages:
+        role = "User" if msg["role"] == "user" else "Assistant"
+        text = f"<b>{role}:</b> {msg['content']}"
+        content.append(Paragraph(text, styles["BodyText"]))
+
+    doc.build(content)
+
+    buffer.seek(0)
+    return buffer
 
 # -----------------------------
 # Page Config
@@ -34,7 +55,14 @@ with st.sidebar:
     if st.button("🗑️ Clear Chat"):
         st.session_state.messages = []
         st.rerun()
+pdf_file = generate_pdf(st.session_state.messages)
 
+st.download_button(
+    label="📄 Export Chat as PDF",
+    data=pdf_file,
+    file_name="chat_history.pdf",
+    mime="application/pdf"
+)
 # -----------------------------
 # Main Page
 # -----------------------------
